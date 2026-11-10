@@ -1,24 +1,367 @@
----
-title: app.json / app.config.js
-description: A reference of available properties in Expo app config.
-maxHeadingDepth: 5
----
 
-import { CodeSquare01Icon } from '@expo/styleguide-icons/outline/CodeSquare01Icon';
 
-import schema from '~/public/static/schemas/unversioned/app-config-schema.json';
-import AppConfigSchemaTable from '~/ui/components/AppConfigSchemaTable';
-import { BoxLink } from '~/ui/components/BoxLink';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert
+} from 'react-native';
 
-The following is a list of properties that are available for you under the `"expo"` key in **app.json** or **app.config.json**. These properties can be passed to the top level object of **app.config.js** or **app.config.ts**.
+export default function App() {
+  const [screen, setScreen] = useState('home');
+  const [role, setRole] = useState('');
+  const [pickup, setPickup] = useState('');
+  const [drop, setDrop] = useState('');
+  const [goods, setGoods] = useState('');
+  const [weight, setWeight] = useState('');
+  const [price, setPrice] = useState('');
+  const [loads, setLoads] = useState([]);
 
-<BoxLink
-  title="Configuration with app config"
-  description="For information on app configuration, the differences between various app config files, and how to use them dynamically."
-  href="/workflow/configuration/"
-  Icon={CodeSquare01Icon}
-/>
+  const commission = Number(price) * 0.10;
 
-## Properties
+  const Button = ({ title, onPress }) => (
+    <TouchableOpacity style={styles.button} onPress={onPress}>
+      <Text style={styles.buttonText}>{title}</Text>
+    </TouchableOpacity>
+  );
 
-<AppConfigSchemaTable schema={schema} />
+  const Header = () => (
+    <View style={styles.header}>
+      <Text style={styles.logo}>🚛 LoadSetu</Text>
+      <Text style={styles.tagline}>Har Truck Ko Milega Kaam</Text>
+    </View>
+  );
+
+  const Input = ({ placeholder, value, onChangeText, keyboardType }) => (
+    <TextInput
+      style={styles.input}
+      placeholder={placeholder}
+      placeholderTextColor="#777"
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType || 'default'}
+    />
+  );
+
+  const postLoad = () => {
+    if (!pickup || !drop || !goods || !weight || !price) {
+      Alert.alert('Missing Details', 'Please fill all the details.');
+      return;
+    }
+
+    const newLoad = {
+      id: Date.now().toString(),
+      pickup,
+      drop,
+      goods,
+      weight,
+      price
+    };
+
+    setLoads([...loads, newLoad]);
+    setPickup('');
+    setDrop('');
+    setGoods('');
+    setWeight('');
+    setPrice('');
+
+    Alert.alert('Success!', 'Your load has been posted.');
+    setScreen('loads');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Header />
+
+      <ScrollView contentContainerStyle={styles.content}>
+
+        {screen === 'home' && (
+          <>
+            <Text style={styles.heading}>Welcome to LoadSetu</Text>
+            <Text style={styles.subtitle}>
+              Connect Trucks with Businesses
+            </Text>
+
+            <Text style={styles.section}>Choose Your Account</Text>
+
+            <Button
+              title="🚛  Driver / Truck Owner"
+              onPress={() => {
+                setRole('Driver');
+                setScreen('driver');
+              }}
+            />
+
+            <Button
+              title="🏪  Business / Shopkeeper"
+              onPress={() => {
+                setRole('Business');
+                setScreen('business');
+              }}
+            />
+
+            <Text style={styles.section}>Our Main Services</Text>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>🚚 Find Available Trucks</Text>
+              <Text>Find transport for your goods.</Text>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>🔄 Return Load</Text>
+              <Text>Help trucks find loads for return trips.</Text>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>💰 10% Commission</Text>
+              <Text>Transparent platform commission.</Text>
+            </View>
+          </>
+        )}
+
+        {screen === 'driver' && (
+          <>
+            <Text style={styles.heading}>Driver Dashboard</Text>
+            <Text style={styles.subtitle}>Welcome, Truck Partner!</Text>
+
+            <Button
+              title="Find Available Loads"
+              onPress={() => setScreen('loads')}
+            />
+
+            <Button
+              title="Find Return Loads"
+              onPress={() => setScreen('return')}
+            />
+
+            <Button
+              title="Post My Available Truck"
+              onPress={() => Alert.alert(
+                'Coming Soon',
+                'Truck listing will be added in the next version.'
+              )}
+            />
+          </>
+        )}
+
+        {screen === 'business' && (
+          <>
+            <Text style={styles.heading}>Business Dashboard</Text>
+            <Text style={styles.subtitle}>Send Your Goods Easily</Text>
+
+            <Button
+              title="➕ Post a New Load"
+              onPress={() => setScreen('post')}
+            />
+
+            <Button
+              title="Find Available Trucks"
+              onPress={() => setScreen('loads')}
+            />
+
+            <Button
+              title="My Posted Loads"
+              onPress={() => setScreen('loads')}
+            />
+          </>
+        )}
+
+        {screen === 'post' && (
+          <>
+            <Text style={styles.heading}>Post Your Load</Text>
+            <Text style={styles.subtitle}>
+              Enter your goods details
+            </Text>
+
+            <Input placeholder="Pickup Location"
+              value={pickup} onChangeText={setPickup} />
+
+            <Input placeholder="Delivery Location"
+              value={drop} onChangeText={setDrop} />
+
+            <Input placeholder="Goods Type"
+              value={goods} onChangeText={setGoods} />
+
+            <Input placeholder="Weight (e.g. 5 Ton)"
+              value={weight} onChangeText={setWeight} />
+
+            <Input placeholder="Transport Price (₹)"
+              value={price} onChangeText={setPrice}
+              keyboardType="numeric" />
+
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>Commission Preview</Text>
+              <Text>Platform 10%: ₹{commission.toFixed(2)}</Text>
+              <Text>Transporter 90%: ₹{(Number(price) * 0.90).toFixed(2)}</Text>
+            </View>
+
+            <Button title="Submit Load" onPress={postLoad} />
+          </>
+        )}
+
+        {screen === 'loads' && (
+          <>
+            <Text style={styles.heading}>Available Loads</Text>
+            <Text style={styles.subtitle}>
+              Loads posted in this demo
+            </Text>
+
+            {loads.length === 0 ? (
+              <Text style={styles.empty}>
+                No loads posted yet.
+              </Text>
+            ) : (
+              loads.map(item => (
+                <View style={styles.infoCard} key={item.id}>
+                  <Text style={styles.cardTitle}>
+                    {item.pickup} → {item.drop}
+                  </Text>
+                  <Text>Goods: {item.goods}</Text>
+                  <Text>Weight: {item.weight}</Text>
+                  <Text>Price: ₹{item.price}</Text>
+                  <Button
+                    title="Request Booking"
+                    onPress={() => Alert.alert(
+                      'Booking Request',
+                      'This is a demo. Real booking will be connected later.'
+                    )}
+                  />
+                </View>
+              ))
+            )}
+          </>
+        )}
+
+        {screen === 'return' && (
+          <>
+            <Text style={styles.heading}>Return Load</Text>
+            <Text style={styles.subtitle}>
+              Find goods for your return journey.
+            </Text>
+            <View style={styles.infoCard}>
+              <Text style={styles.cardTitle}>🔄 Smart Return Matching</Text>
+              <Text>
+                In the next version, trucks and loads will be matched
+                using pickup, destination, route and availability.
+              </Text>
+            </View>
+            <Button
+              title="View All Loads"
+              onPress={() => setScreen('loads')}
+            />
+          </>
+        )}
+
+        {screen !== 'home' && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setScreen('home')}
+          >
+            <Text style={styles.backText}>← Back to Home</Text>
+          </TouchableOpacity>
+        )}
+
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F1F6FA'
+  },
+  header: {
+    backgroundColor: '#123B70',
+    paddingTop: 48,
+    paddingBottom: 22,
+    alignItems: 'center'
+  },
+  logo: {
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: 'bold'
+  },
+  tagline: {
+    color: '#D8E8FF',
+    fontSize: 13,
+    marginTop: 5
+  },
+  content: {
+    padding: 18,
+    paddingBottom: 40
+  },
+  heading: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: '#123B70',
+    marginTop: 12
+  },
+  subtitle: {
+    color: '#65758B',
+    fontSize: 15,
+    marginTop: 6,
+    marginBottom: 20
+  },
+  section: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#123B70',
+    marginTop: 20,
+    marginBottom: 12
+  },
+  button: {
+    backgroundColor: '#167BCE',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    alignItems: 'center'
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 15
+  },
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#DFEAF3'
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#123B70',
+    marginBottom: 8
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D5E0EA',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 15,
+    marginBottom: 12,
+    color: '#172B42'
+  },
+  empty: {
+    color: '#65758B',
+    textAlign: 'center',
+    padding: 25
+  },
+  backButton: {
+    padding: 14,
+    alignItems: 'center'
+  },
+  backText: {
+    color: '#167BCE',
+    fontWeight: 'bold',
+    fontSize: 15
+  }
+});
